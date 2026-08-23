@@ -3,7 +3,7 @@ An end-to-end Python-based model implementing custom 2D discrete convolution, sa
 
 **Contributing members:**
 
-$ 1. $ Mushfiq Raiyun (@mqrnknoetonoob)
-$ 2. $ Sajid Ibne Zaman (@TheGameTripleS)
+* 1. * Mushfiq Raiyun (@mqrnknoetonoob)
+* 2. * Sajid Ibne Zaman (@TheGameTripleS)
 
 
