@@ -28,29 +28,43 @@ def ycbcr_to_rgb(image: np.ndarray) -> np.ndarray:
 
 def chroma_subsample_pipeline(image: np.ndarray, luma_factor: int, chroma_factor: int,
                                recon_mode: str = "linear", kernel_size: int = 5,
-                               sigma: float = 1.0) -> np.ndarray:
+                               sigma: float = 1.0) -> dict:
     """
     Downsample luma (Y) lightly (or not at all) and chroma (Cb, Cr) more
     aggressively, then reconstruct each independently and recombine.
 
     luma_factor=1 means no downsampling of brightness at all.
     chroma_factor > luma_factor is the typical real-world choice.
+
+    Returns a dict:
+        "reconstructed"     : uint8 RGB array at the original resolution.
+        "downsampled_planes": list of three 2D uint8 arrays [Y_small, Cr_small, Cb_small].
+                              These are what would actually be written to disk — the three
+                              planes at their reduced resolutions.  Needed by
+                              metrics.chroma_full_summary to compute honest byte sizes.
     """
-    ycrcb = rgb_to_ycbcr(image)  # note: cv2 gives Y, Cr, Cb order
+    ycrcb = rgb_to_ycbcr(image)  # cv2 gives Y, Cr, Cb order
     y, cr, cb = ycrcb[:, :, 0], ycrcb[:, :, 1], ycrcb[:, :, 2]
-    h, w = y.shape
 
     def process_channel(channel_2d, factor):
+        """Run the full encode-decode pipeline on a single 2D channel.
+        Returns (reconstructed_2d, downsampled_2d) both as uint8."""
         channel_3d = channel_2d[:, :, np.newaxis]  # reuse pipeline's (H,W,C) path
         result = pl.run_pipeline(
             channel_3d, factor, recon_mode=recon_mode,
             kernel_size=kernel_size, sigma=sigma, apply_filter=(factor > 1),
         )
-        return result["reconstructed"][:, :, 0]
+        recon      = result["reconstructed"][:, :, 0]   # 2D uint8 reconstructed
+        downsampled = result["downsampled"][:, :, 0]    # 2D uint8 stored plane
+        return recon, downsampled
 
-    y_out = process_channel(y, luma_factor)
-    cr_out = process_channel(cr, chroma_factor)
-    cb_out = process_channel(cb, chroma_factor)
+    y_out,  y_small  = process_channel(y,  luma_factor)
+    cr_out, cr_small = process_channel(cr, chroma_factor)
+    cb_out, cb_small = process_channel(cb, chroma_factor)
 
     merged = np.stack([y_out, cr_out, cb_out], axis=-1)
-    return ycbcr_to_rgb(merged)
+
+    return {
+        "reconstructed":      ycbcr_to_rgb(merged),
+        "downsampled_planes": [y_small, cr_small, cb_small],
+    }
