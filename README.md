@@ -1,5 +1,7 @@
-# Nyqompressor
-An end-to-end Python-based model implementing custom 2D discrete convolution, sampling, and interpolation pipelines to benchmark Nyquist-Shannon theory-driven image compression against industrial(OpenCV) libraries.
+# Nyqompressor: Loss-Optimised 2D Image Compressor
+
+An end-to-end Python framework implementing custom 2D discrete convolution, spatial decimation, and reconstruction pipelines from scratch to benchmark Nyquist–Shannon sampling theorem-driven image compression against industrial baselines (OpenCV).
+
 ---
 
 ## 1. Project Overview & Motivation
@@ -89,6 +91,16 @@ Reconstruction quality is evaluated quantitatively:
 ### Stage 5: Human Visual System (HVS) & Chroma Subsampling
 The human eye possesses significantly higher visual acuity for brightness (Luminance $Y$) than color differences (Chrominance $C_b, C_r$). Converting RGB to $YC_bC_r$ allows heavy decimation on chroma components while preserving luma, yielding massive compression with minimal perceived degradation.
 
+**Implementation (`core/color.py`):**
+1. **Color space conversion** — `rgb_to_ycbcr` / `ycbcr_to_rgb` wrap `cv2.cvtColor` to move between RGB and $YC_bC_r$ (OpenCV returns channels in Y, Cr, Cb order).
+2. **Independent factors per plane** — the three channels are split and each run through the *existing* `pipeline.run_pipeline` (filter → downsample → reconstruct) separately, with **`luma_factor`** applied to $Y$ and **`chroma_factor`** applied to $C_b, C_r$. Typically `luma_factor < chroma_factor` (e.g. `luma_factor=1`, `chroma_factor=4`), so luma is preserved near-full-resolution while chroma is shrunk aggressively.
+3. **Recombination** — the three reconstructed planes are stacked back into a $YC_bC_r$ image and converted back to RGB.
+4. **Honest compression accounting** — because each plane is stored at a *different* resolution (not one uniformly-shrunk image), the pixel-count ratio can't reuse the plain `compression_ratio` formula. `metrics.chroma_compression_ratio` computes it as:
+   $$CR = \frac{H \times W \times 3}{\dfrac{H \times W}{\text{luma\_factor}^2} + 2\cdot\dfrac{H \times W}{\text{chroma\_factor}^2}}$$
+   Likewise, `metrics.chroma_full_summary` sums the zlib-compressed byte size of the three *separately stored* planes (`downsampled_planes` returned by `chroma_subsample_pipeline`), mirroring how a real codec stores luma and chroma planes independently.
+
+**Result:** because luma is barely touched, the pixel-count / byte-level compression ratio is noticeably *lower* than uniform downsampling at the same factor (e.g. ~2.67× vs. 16× for factor 4), but PSNR is substantially higher (~28 dB vs. ~20 dB) — demonstrating that HVS-aware selective compression trades raw compression ratio for large perceptual quality gains.
+
 ---
 
 ## 4. Codebase Architecture
@@ -106,7 +118,7 @@ MAINPROJECT/
 │   └── test_patterns.py    # Synthetic signals (Checkerboard, Sine Grating, Zone Plate)
 ├── app.py                  # Interactive Streamlit UI with side-by-side comparison
 ├── test_pipeline.py        # Automated smoke test suite
-├── README.md
+├── README.md               # English project documentation
 ```
 
 ---
@@ -129,7 +141,6 @@ py test_pipeline.py
 py -m streamlit run app.py
 ```
 Access the application at `http://localhost:8501`.
-
 
 **Contributing members:**
 
