@@ -84,7 +84,7 @@ Two distinct reconstruction filters are implemented from scratch:
 ### Stage 4: Rate-Distortion & Quality Metrics
 Reconstruction quality is evaluated quantitatively:
 - **Mean Squared Error (MSE):**
-  $$\text{MSE} = \frac{1}{H \times W} \sum_{x=0}^{H-1} \sum_{y=0}^{W-1} [f(x, y) - \hat{f}(x, y)]^2$$
+  $$\text{MSE} = \frac{1}{H \times W} \sum_{x=0}^{H-1} \sum_{y=0}^{W-1} f(x, y) - \hat{f}(x, y)^2$$    
 - **Peak Signal-to-Noise Ratio (PSNR):**
   $$\text{PSNR} = 10 \cdot \log_{10}\left(\frac{255^2}{\text{MSE}}\right) \quad (\text{dB})$$
 
