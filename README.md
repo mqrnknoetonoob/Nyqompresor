@@ -148,4 +148,4 @@ Access the application at `http://localhost:8501`.
 
 **2.** Sajid Ibne Zaman (@TheGameTripleS)
 
-
+Presentation Slides: https://docs.google.com/presentation/d/1tFHJGvcK72Ci1JX7N9gx4WSJ2U1G8aJ-/edit?usp=drive_link&ouid=116256883600917524880&rtpof=true&sd=true
