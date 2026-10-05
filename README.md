@@ -1,4 +1,4 @@
-# Nyqompressor: Loss-Optimised 2D Image Compressor
+# Nyqompresor: Loss-Optimised 2D Image Compressor
 
 An end-to-end Python framework implementing custom 2D discrete convolution, spatial decimation, and reconstruction pipelines from scratch to benchmark Nyquist–Shannon sampling theorem-driven image compression against industrial baselines (OpenCV).
 
